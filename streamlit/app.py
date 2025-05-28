@@ -15,6 +15,14 @@ from modules.panduan_penggunaan import page_panduan_penggunaan
 from modules.faq import page_faq
 from modules.articles import page_articles
 
+# Konfigurasi halaman Streamlit
+st.set_page_config(
+    page_title="ReFisher - Klasifikasi Kesegaran Ikan",
+    page_icon="🐟",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # --- Diubah untuk tflite-runtime ---
 try:
     from tflite_runtime.interpreter import Interpreter
@@ -57,14 +65,6 @@ class MinimalTFLiteInterpreter:
         fresh_confidence = np.random.uniform(0.6, 0.95)
         non_fresh_confidence = 1.0 - fresh_confidence
         return np.array([[fresh_confidence, non_fresh_confidence]], dtype=np.float32)
-
-# Konfigurasi halaman Streamlit
-st.set_page_config(
-    page_title="ReFisher - Klasifikasi Kesegaran Ikan",
-    page_icon="🐟",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Kustomisasi CSS untuk tampilan aplikasi
 st.markdown("""
@@ -408,7 +408,7 @@ def main():
         """
         <div class="footer">
             © 2025 Refisher. All rights reserved.<br>
-            Segarnya Ikan, Amannya Sajian Anda.
+            Designed with Care to Keep Your Fish Fresh and Your Meals Safe.
         </div>
         """,
         unsafe_allow_html=True
