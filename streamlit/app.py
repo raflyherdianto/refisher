@@ -8,23 +8,32 @@ import time
 import io
 import os
 import random
+import base64
+
+# --- Import halaman dari modules ---
+from modules.panduan_penggunaan import page_panduan_penggunaan
+from modules.faq import page_faq
+from modules.articles import page_articles
 
 # --- Diubah untuk tflite-runtime ---
-# Mengimpor Interpreter dari tflite-runtime untuk efisiensi.
-# Jika gagal, TFLITE_AVAILABLE akan False, dan aplikasi berjalan dalam mode demo.
 try:
     from tflite_runtime.interpreter import Interpreter
     TFLITE_AVAILABLE = True
 except ImportError:
-    TFLITE_AVAILABLE = False
+    try:
+        import tensorflow as tf
+        Interpreter = tf.lite.Interpreter
+        TFLITE_AVAILABLE = True
+    except (ImportError, AttributeError):
+        # Jika keduanya gagal, gunakan mode demo
+        TFLITE_AVAILABLE = False
+        st.warning("⚠️ Peringatan: `tflite-runtime` atau `tensorflow` tidak ditemukan. Aplikasi berjalan dalam mode demo dengan prediksi acak.")
 
-# --- Kelas MinimalTFLiteInterpreter ---
-# Kelas ini digunakan sebagai fallback jika tflite-runtime tidak terinstal.
-# Ini memungkinkan aplikasi tetap berjalan untuk demo UI.
+
+# --- Kelas MinimalTFLiteInterpreter (tetap sama) ---
 class MinimalTFLiteInterpreter:
     """Minimal TensorFlow Lite interpreter for when TensorFlow is not available"""
     def __init__(self, model_path):
-        st.warning("⚠️ Peringatan: `tflite-runtime` tidak ditemukan. Aplikasi berjalan dalam mode demo dengan prediksi acak.")
         self.model_path = model_path
         self.input_height = 224
         self.input_width = 224
@@ -45,14 +54,13 @@ class MinimalTFLiteInterpreter:
         pass
         
     def get_tensor(self, index):
-        # Mengembalikan prediksi pura-pura untuk tujuan demo
         fresh_confidence = np.random.uniform(0.6, 0.95)
         non_fresh_confidence = 1.0 - fresh_confidence
         return np.array([[fresh_confidence, non_fresh_confidence]], dtype=np.float32)
 
 # Konfigurasi halaman Streamlit
 st.set_page_config(
-    page_title="🐟 ReFisher - Klasifikasi Kesegaran Ikan",
+    page_title="ReFisher - Klasifikasi Kesegaran Ikan",
     page_icon="🐟",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -61,8 +69,10 @@ st.set_page_config(
 # Kustomisasi CSS untuk tampilan aplikasi
 st.markdown("""
 <style>
+    /* Global Styles for Main Headers and Subtitles */
+    /* .main-header tidak lagi digunakan untuk nama aplikasi, tapi bisa untuk judul bagian lain */
     .main-header {
-        font-size: 3rem;
+        font-size: 2.5rem; /* Sedikit dikecilkan karena ada logo besar */
         background: linear-gradient(90deg, #1e3c72, #2a5298);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -70,13 +80,185 @@ st.markdown("""
         margin-bottom: 2rem;
         font-weight: bold;
     }
-    .subtitle { text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; }
-    .prediction-box { padding: 1.5rem; border-radius: 10px; margin: 1rem 0; text-align: center; color: white; }
-    .fresh-fish { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .non-fresh-fish { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-    .info-card { background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #007bff; margin: 1rem 0; }
-    .metric-card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; margin: 0.5rem; }
-    .footer { text-align: center; padding: 2rem; color: #666; border-top: 1px solid #eee; margin-top: 3rem; }
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 1.2rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Prediction Box Styles */
+    .prediction-box {
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        text-align: center;
+        color: white;
+    }
+    .fresh-fish {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .non-fresh-fish {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    /* Info Card Styles */
+    .info-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #007bff;
+        margin: 1rem 0;
+    }
+
+    /* Metric Card Styles */
+    .metric-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+        margin: 0.5rem;
+    }
+
+    /* Footer Styles */
+    .footer {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        border-top: 1px solid #eee;
+        margin-top: 3rem;
+    }
+
+    /* Font sizes for main content paragraphs, lists, and general markdown */
+    p,
+    li,
+    div.stMarkdown p, /* General markdown paragraphs */
+    .info-card p, .info-card li,
+    .stMarkdown ul li, .stMarkdown ol li,
+    div[data-testid^="stMarkdownContainer"] p,
+    div[data-testid^="stMarkdownContainer"] li,
+    div[data-testid^="stMarkdownContainer"] span {
+        font-size: 1.15rem !important;
+        line-height: 1.7 !important;
+    }
+
+    /* Font sizes for sidebar */
+    .stSidebar p, .stSidebar li, .stSidebar .stMarkdown p, .stSidebar .stMarkdown li {
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* CSS for article images (st.image()) */
+    div[data-testid="stImage"] img {
+        max-height: 400px !important;
+        object-fit: contain !important;
+        width: 100% !important;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* CSS for custom HTML article cards */
+    .article-card {
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        margin-bottom: 0px !important;
+        position: relative;
+        z-index: 1;
+    }
+
+    .article-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .article-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .article-card-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .article-card-title {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #0B3B73;
+        margin: 0;
+        flex-grow: 1;
+    }
+
+    .article-card-summary {
+        font-size: 0.95em;
+        color: #555;
+        line-height: 1.5;
+        margin-top: 5px;
+        flex-grow: 1;
+    }
+
+    /* CSS for Streamlit button (Baca Artikel) */
+    div[data-testid^="stButton"] > button {
+        background-color: #0B3B73;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    /* Spacing between Streamlit columns */
+    div[data-testid^="stHorizontalBlock"] > div[data-testid^="stVerticalBlock"] {
+        margin-bottom: 20px;
+    }
+    
+    /* CSS untuk penataan logo utama (jika logo sudah termasuk teks) */
+    .app-logo-container {
+        text-align: center; /* Untuk menengahkan logo gambar */
+        margin-bottom: -20px; /* Tarik logo sedikit ke atas agar lebih dekat dengan jargon */
+    }
+    
+    .app-logo {
+        max-width: 250px; /* Atur lebar maksimum logo utama */
+        height: auto;
+        display: block; /* Agar margin auto bekerja untuk menengahkan */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Jargon di bawah logo utama */
+    .app-jargon {
+        text-align: center;
+        font-size: 1.15rem;
+        color: #666;
+        margin-top: 0px; /* Mengatur jarak dari logo */
+        margin-bottom: 3rem; /* Jarak ke konten berikutnya */
+    }
+
+    /* Custom CSS for sidebar logo */
+    .sidebar-logo {
+        width: 150px; /* Lebar logo di sidebar */
+        display: block;
+        margin: 10px auto 20px auto; /* Margin atas, samping auto (tengah), margin bawah */
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -84,7 +266,6 @@ class FishFreshnessClassifier:
     def __init__(self, model_path):
         """Inisialisasi model TensorFlow Lite."""
         try:
-            # --- Diubah untuk tflite-runtime ---
             if TFLITE_AVAILABLE:
                 self.interpreter = Interpreter(model_path=model_path)
             else:
@@ -119,8 +300,6 @@ class FishFreshnessClassifier:
             self.interpreter.invoke()
             output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
             
-            # --- Diubah untuk tflite-runtime ---
-            # Selalu gunakan implementasi softmax dari numpy karena tflite-runtime tidak punya tf.nn.softmax
             exp_values = np.exp(output_data[0] - np.max(output_data[0]))
             probabilities = exp_values / np.sum(exp_values)
             
@@ -141,66 +320,122 @@ def create_confidence_chart(probabilities, class_labels):
     fig.update_layout(title="Visualisasi Skor Keyakinan", xaxis_title="Kelas", yaxis_title="Keyakinan", yaxis=dict(range=[0, 1]), height=400)
     return fig
 
-def create_sample_images_section():
-    """Membuat bagian untuk memilih gambar contoh."""
-    st.subheader("🖼️ Contoh Gambar untuk Testing")
-    st.markdown("<div class='info-card'><p>Tidak punya gambar ikan? Gunakan contoh gambar berikut untuk mencoba aplikasi:</p></div>", unsafe_allow_html=True)
-    
-    sample_col1, sample_col2, sample_col3 = st.columns(3)
-    FRESH_DIR, NON_FRESH_DIR = "test_sample/Fresh Fish", "test_sample/Non Fresh Fish"
-    
-    def on_sample_click(path):
-        try:
-            if not os.path.isdir(path):
-                st.error(f"Direktori tidak ditemukan: '{path}'. Pastikan folder 'test_sample' ada.")
-                return
-            files = [f for f in os.listdir(path) if f.lower().endswith(('png', 'jpg', 'jpeg'))]
-            if files:
-                st.session_state.sample_image_path = os.path.join(path, random.choice(files))
-            else:
-                st.warning(f"Tidak ada file gambar di: '{path}'")
-        except Exception as e:
-            st.error(f"Gagal memuat gambar contoh: {e}")
+# Fungsi untuk mengonversi gambar ke base64 (untuk logo)
+def _get_image_as_base64(filepath):
+    if not os.path.exists(filepath):
+        st.error(f"Error: File logo tidak ditemukan di '{filepath}'. Pastikan file ada di folder yang sama dengan 'streamlit_app.py'.")
+        return "" 
+    with open(filepath, "rb") as f:
+        image_bytes = f.read()
+    return base64.b64encode(image_bytes).decode("utf-8")
 
-    with sample_col1:
-        if st.button("🟢 Fresh Fish Sample", use_container_width=True): on_sample_click(FRESH_DIR)
-    with sample_col2:
-        if st.button("🔴 Non-Fresh Fish Sample", use_container_width=True): on_sample_click(NON_FRESH_DIR)
-    with sample_col3:
-        if st.button("📷 Tips Foto yang Baik", use_container_width=True):
-            st.info("Tips foto optimal: Pastikan mata ikan terlihat jelas, gunakan pencahayaan cukup, ambil dari jarak dekat, dan hindari gambar buram.")
 
-def main():
-    st.markdown('<h1 class="main-header">🐟 ReFisher</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle">Sistem Klasifikasi Kesegaran Ikan Menggunakan Computer Vision</p>', unsafe_allow_html=True)
+def main(): 
+    # Path ke logo utama (ikon + teks) untuk header halaman utama
+    main_logo_path = 'Logo.png'
+    main_logo_base64 = _get_image_as_base64(main_logo_path)
+
+    # Path ke logo sidebar (hanya teks)
+    sidebar_logo_path = 'Logo-Name.png'
+    sidebar_logo_base64 = _get_image_as_base64(sidebar_logo_path)
     
     @st.cache_resource
     def load_model(): return FishFreshnessClassifier("model.tflite")
     classifier = load_model()
 
     if "sample_image_path" not in st.session_state: st.session_state.sample_image_path = None
+    if "page" not in st.session_state: st.session_state.page = "Aplikasi Klasifikasi"
+    if "selected_article" not in st.session_state: st.session_state.selected_article = None 
 
     with st.sidebar:
-        st.header("📋 Informasi & Pengaturan")
-        st.markdown("<div class='info-card'><h4>Informasi Model</h4><p><strong>Sumber Data:</strong> Roboflow Universe</p><p><strong>Kelas:</strong> Fresh & Non Fresh</p><p><strong>Model:</strong> TensorFlow Lite</p></div>", unsafe_allow_html=True)
-        st.markdown("---")
-        st.markdown("<h4>Cara Penggunaan</h4><ol><li>Upload gambar atau pilih contoh</li><li>Tunggu proses analisis</li><li>Lihat hasil prediksi</li></ol>", unsafe_allow_html=True)
-        st.markdown("---")
-        show_details = st.checkbox("Tampilkan detail teknis", value=True)
-        show_confidence = st.checkbox("Tampilkan grafik keyakinan", value=True)
+        # Menampilkan logo teks di sidebar
+        if sidebar_logo_base64:
+            st.markdown(f'<img src="data:image/png;base64,{sidebar_logo_base64}" class="sidebar-logo">', unsafe_allow_html=True)
+        else:
+            st.title("ReFisher") # Fallback jika logo tidak ditemukan
+        
+        st.header("📋 Navigasi")
+        # Tombol navigasi untuk halaman
+        if st.button("🏡 Aplikasi Klasifikasi", use_container_width=True):
+            st.session_state.page = "Aplikasi Klasifikasi"
+            st.session_state.selected_article = None
+        if st.button("📖 Panduan Penggunaan", use_container_width=True):
+            st.session_state.page = "Panduan Penggunaan"
+            st.session_state.selected_article = None
+        if st.button("❓ FAQ", use_container_width=True):
+            st.session_state.page = "FAQ"
+            st.session_state.selected_article = None
+        if st.button("📰 Artikel", use_container_width=True):
+            st.session_state.page = "Artikel"
+            st.session_state.selected_article = None
 
+        st.markdown("---")
+        st.markdown("<div class='info-card'><h4>Informasi Model</h4><p><strong>Sumber Data:</strong> Roboflow Universe</p><p><strong>Kelas:</strong> Fresh & Non Fresh</p><p><strong>Model:</strong> TensorFlow Lite</p></div>", unsafe_allow_html=True)
+        # Pindahkan "Tentang Aplikasi ReFisher" ke sidebar
+        st.markdown("---")
+        with st.expander("ℹ️ Tentang Aplikasi ReFisher"):
+            st.markdown(
+                """
+                Aplikasi ini menggunakan **Computer Vision** dan **Deep Learning** untuk mengklasifikasikan kesegaran ikan berdasarkan analisis citra.
+                - **Backend**: Python, Streamlit
+                - **Machine Learning**: TensorFlow Lite
+                - **Dataset**: Roboflow Universe (Fresh and Non-Fresh Fish)
+                """
+            )
+        st.markdown("---")
+        # Checkbox show_details dipindahkan ke halaman utama
+        if st.session_state.page == "Aplikasi Klasifikasi":
+            show_details = st.checkbox("Tampilkan detail teknis", value=True)
+            show_confidence = st.checkbox("Tampilkan grafik keyakinan", value=True)
+            if 'show_details' not in st.session_state: st.session_state.show_details = True
+            if 'show_confidence' not in st.session_state: st.session_state.show_confidence = True
+            st.session_state.show_details = show_details
+            st.session_state.show_confidence = show_confidence
+            
+    # Logika untuk menampilkan halaman yang berbeda
+    if st.session_state.page == "Aplikasi Klasifikasi":
+        page_klasifikasi_utama(classifier, main_logo_path, main_logo_base64)
+    elif st.session_state.page == "Panduan Penggunaan":
+        page_panduan_penggunaan()
+    elif st.session_state.page == "FAQ":
+        page_faq()
+    elif st.session_state.page == "Artikel":
+        page_articles()
+
+    # Footer Section
+    st.markdown("---") 
+    st.markdown(
+        """
+        <div class="footer">
+            © 2025 Refisher. All rights reserved.<br>
+            Segarnya Ikan, Amannya Sajian Anda.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Fungsi untuk halaman utama aplikasi klasifikasi
+def page_klasifikasi_utama(classifier, logo_path, logo_base64):
+    # --- Pindahkan bagian header ke sini ---
+    st.markdown(f"""
+    <div class="app-logo-container">
+        <img src="data:image/png;base64,{logo_base64}" class="app-logo" width="250">
+    </div>
+    <p class="app-jargon">Segarnya Ikan, Amannya Sajian Anda.</p>
+    """, unsafe_allow_html=True)
     st.markdown("---")
-    create_sample_images_section()
+    # --- Akhir bagian header yang dipindahkan ---
 
     col1, col2 = st.columns([1, 1])
     image, caption = None, ""
     
     with col1:
-        st.header("📤 Upload atau Pilih Gambar")
-        uploaded_file = st.file_uploader("Pilih gambar ikan untuk diklasifikasi", type=['png', 'jpg', 'jpeg'])
+        st.header("📤 Unggah Gambar untuk Analisis")
+        st.info("💡 Anda juga bisa menemukan contoh gambar di halaman 'Panduan Penggunaan' di sidebar.")
+        uploaded_file = st.file_uploader("Pilih gambar ikan (.png, .jpg, .jpeg)", type=['png', 'jpg', 'jpeg'])
         
         if uploaded_file:
-            image, caption = Image.open(uploaded_file), "Gambar yang diupload"
+            image, caption = Image.open(uploaded_file), "Gambar yang diunggah"
             st.session_state.sample_image_path = None
         elif st.session_state.sample_image_path:
             try:
@@ -210,8 +445,9 @@ def main():
                 st.session_state.sample_image_path = None
 
         if image:
-            st.image(image, caption=caption, use_column_width=True)
-            st.subheader("🎨 Peningkatan Kualitas Gambar")
+            st.image(image, caption=caption, use_container_width=True)
+            st.subheader("🎨 Sesuaikan Kualitas Gambar")
+            st.info("Gunakan slider ini untuk meningkatkan visibilitas detail ikan sebelum analisis.")
             enhance_contrast = st.slider("Kontras", 0.5, 2.0, 1.0, 0.1)
             enhance_brightness = st.slider("Kecerahan", 0.5, 2.0, 1.0, 0.1)
             
@@ -219,53 +455,36 @@ def main():
                 enhanced_image = ImageEnhance.Contrast(image).enhance(enhance_contrast)
                 enhanced_image = ImageEnhance.Brightness(enhanced_image).enhance(enhance_brightness)
                 image = enhanced_image
-                st.image(image, caption="Gambar setelah enhancement", use_column_width=True)
+                st.image(image, caption="Gambar setelah peningkatan kualitas", use_container_width=True)
     
     with col2:
-        st.header("🤖 Hasil Prediksi")
+        st.header("🤖 Hasil Analisis Kesegaran Ikan")
         if image:
-            with st.spinner("🔄 Menganalisis gambar..."):
+            with st.spinner("🔄 Menganalisis gambar ikan..."):
                 predicted_class, probabilities = classifier.predict(image)
             
             if predicted_class and probabilities is not None:
                 confidence = max(probabilities)
                 result_class = "fresh-fish" if predicted_class == "Fresh Fish" else "non-fresh-fish"
                 result_icon = "🟢" if predicted_class == "Fresh Fish" else "🔴"
-                recommendation = "Ikan terdeteksi dalam kondisi segar dan layak konsumsi" if predicted_class == "Fresh Fish" else "Ikan terdeteksi dalam kondisi tidak segar dan tidak layak konsumsi"
+                recommendation = "Ikan terdeteksi dalam kondisi segar dan **layak konsumsi**." if predicted_class == "Fresh Fish" else "Ikan terdeteksi dalam kondisi **tidak segar** dan tidak layak konsumsi."
                 
                 st.markdown(f'<div class="prediction-box {result_class}"><h2>{result_icon} {predicted_class}</h2><h3>Keyakinan: {confidence:.2%}</h3><p>{recommendation}</p></div>', unsafe_allow_html=True)
                 
-                if show_details:
-                    st.subheader("📈 Detail Metrik")
+                if st.session_state.get('show_details', True): 
+                    st.subheader("📈 Detail Skor Keyakinan")
                     m_col1, m_col2 = st.columns(2)
                     m_col1.metric("Keyakinan Ikan Segar", f"{probabilities[0]:.2%}")
                     m_col2.metric("Keyakinan Ikan Tidak Segar", f"{probabilities[1]:.2%}")
                 
-                if show_confidence:
+                if st.session_state.get('show_confidence', True):
                     st.plotly_chart(create_confidence_chart(probabilities, classifier.class_labels), use_container_width=True)
                 
-                st.markdown("---")
-                st.subheader("💾 Unduh Hasil")
-                buffer = io.BytesIO()
-                image.save(buffer, format='PNG')
-                st.download_button(label="📥 Unduh Gambar Hasil Proses", data=buffer, file_name=f"processed_{caption.split(':')[-1].strip()}", mime="image/png", use_container_width=True)
             else:
-                st.error("❌ Gagal melakukan prediksi. Coba lagi dengan gambar lain.")
+                st.error("❌ Gagal melakukan prediksi. Pastikan gambar yang diunggah adalah gambar ikan yang jelas dan tidak buram.")
         else:
-            st.info("📷 Silakan unggah gambar ikan atau pilih dari contoh untuk memulai klasifikasi.")
+            st.info("📷 Silakan unggah gambar ikan atau pilih dari contoh di halaman Panduan Penggunaan untuk memulai klasifikasi.")
 
-    st.markdown("---")
-    with st.expander("ℹ️ Tentang Aplikasi ReFisher"):
-        st.markdown(
-            """
-            Aplikasi ini menggunakan **Computer Vision** dan **Deep Learning** untuk mengklasifikasikan kesegaran ikan berdasarkan analisis citra.
-            - **Backend**: Python, Streamlit
-            - **Machine Learning**: TensorFlow Lite
-            - **Dataset**: Roboflow Universe (Fresh and Non-Fresh Fish)
-            """
-        )
-    
-    st.markdown('<div class="footer"><p>🐟 ReFisher - Capstone Project © 2025</p></div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
