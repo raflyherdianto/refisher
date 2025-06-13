@@ -29,12 +29,12 @@ Selamat datang di **ReFisher**! ✨ Proyek ini memanfaatkan kekuatan _Deep Learn
 
 Berikut adalah dokumentasi lengkap proyek ReFisher:
 
-* **📑 Project Plan**: [Rencana Proyek](https://docs.google.com/document/d/1example-project-plan)
-* **📄 Project Brief**: [Brief Proyek](https://docs.google.com/document/d/1example-project-brief)
-* **🎬 Video Demo**: [Demo Aplikasi](https://youtu.be/example-demo-video)
-* **🎤 Video Presentasi**: [Presentasi Tim](https://youtu.be/example-presentation-video)
-* **📊 Slide PPT**: [Presentasi Lengkap](https://docs.google.com/presentation/d/1example-presentation-slides)
-* **📝 Pakta Integritas**: [Pakta Integritas](https://docs.google.com/presentation/d/1example-presentation-slides)
+* **📑 Project Plan**: [Rencana Proyek](https://docs.google.com/document/d/15SeP-4M04miu1vkplOl53S3wnnDEzU4NdNu3Td_LDew/edit?usp=sharing)
+* **📄 Project Brief**: [Brief Proyek](https://docs.google.com/document/d/1uldm9zxYyAf9WkP4r7xC4EXP2apsqpRzU2NKyYFSUTY/edit?usp=sharing)
+* **🎬 Video Demo**: [Demo Aplikasi](https://youtu.be/_E6i-6UPnzI)
+* **🎤 Video Presentasi**: [Presentasi Tim](https://youtu.be/0PNol4fa9rw)
+* **📊 Slide PPT**: [Presentasi Lengkap](https://www.canva.com/design/DAGpTq1A4xA/sQSXHcNkse7WTgiZtNV3dA/edit?utm_content=DAGpTq1A4xA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+* **📝 Pakta Integritas**: [Pakta Integritas](https://docs.google.com/document/d/1-uMXxU5zIdedYKf0xMFkJW1LWKo_vJsepS9wlKU2fOE/edit?usp=sharing)
 
 ## 👥 Anggota Tim
 
