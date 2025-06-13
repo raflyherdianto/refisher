@@ -19,7 +19,10 @@ Program ini memberikan pelatihan intensif di bidang _Machine Learning_ & _Data S
 
 # 🐟 ReFisher: Deteksi Kesegaran Ikan dengan AI
 
-![Logo ReFisher](https://i.imgur.com/yjRTZKs.png)
+<div align="center">
+  <img src="https://i.imgur.com/yjRTZKs.png" alt="Logo ReFisher" width="300"/>
+</div>
+
 Selamat datang di **ReFisher**! ✨ Proyek ini memanfaatkan kekuatan _Deep Learning_ untuk mengklasifikasi kesegaran ikan berdasarkan citra. Model yang kami kembangkan dapat membedakan antara ikan segar dan tidak segar, sebuah langkah awal yang menjanjikan untuk otomatisasi kontrol kualitas di industri perikanan.
 
 ## 📋 Dokumentasi
@@ -31,6 +34,7 @@ Berikut adalah dokumentasi lengkap proyek ReFisher:
 * **🎬 Video Demo**: [Demo Aplikasi](https://youtu.be/example-demo-video)
 * **🎤 Video Presentasi**: [Presentasi Tim](https://youtu.be/example-presentation-video)
 * **📊 Slide PPT**: [Presentasi Lengkap](https://docs.google.com/presentation/d/1example-presentation-slides)
+* **📝 Pakta Integritas**: [Pakta Integritas](https://docs.google.com/presentation/d/1example-presentation-slides)
 
 ## 👥 Anggota Tim
 
@@ -64,7 +68,8 @@ Kami telah mengembangkan aplikasi web interaktif menggunakan **Streamlit** untuk
 ### 🔧 Menjalankan Aplikasi Secara Lokal
 
 #### ⚠️ Catatan Penting
-Aplikasi ini **tidak mendukung Windows** secara native karena `tflite_runtime` tidak support Windows. Gunakan WSL untuk Windows atau jalankan di Linux.
+- Aplikasi ini **tidak mendukung Windows** secara native karena `tflite_runtime` tidak support Windows. Gunakan WSL untuk Windows atau jalankan di Linux.
+- **Python 3.10 wajib digunakan** untuk kompatibilitas penuh dengan semua dependencies.
 
 #### 🐧 Untuk Pengguna Windows (menggunakan WSL)
 
@@ -79,16 +84,24 @@ Aplikasi ini **tidak mendukung Windows** secara native karena `tflite_runtime` t
    cd refisher/streamlit
    ```
 
-3. **Install Python dan dependencies**:
+3. **Install Python 3.10 dan dependencies**:
    ```bash
    sudo apt update
-   sudo apt install python3 python3-pip
-   pip3 install -r requirements.txt
+   sudo apt install software-properties-common
+   sudo add-apt-repository ppa:deadsnakes/ppa
+   sudo apt update
+   sudo apt install python3.10 python3.10-pip python3.10-venv
+   
+   # Verifikasi versi Python
+   python3.10 --version
+   
+   # Install dependencies
+   python3.10 -m pip install -r requirements.txt
    ```
 
 4. **Jalankan aplikasi**:
    ```bash
-   streamlit run app.py
+   python3.10 -m streamlit run app.py
    ```
 
 #### 🐧 Untuk Pengguna Linux
@@ -99,14 +112,25 @@ Aplikasi ini **tidak mendukung Windows** secara native karena `tflite_runtime` t
    cd refisher/streamlit
    ```
 
-2. **Install dependencies**:
+2. **Install Python 3.10 dan dependencies**:
    ```bash
-   pip install -r requirements.txt
+   # Untuk Ubuntu/Debian
+   sudo apt update
+   sudo apt install software-properties-common
+   sudo add-apt-repository ppa:deadsnakes/ppa
+   sudo apt update
+   sudo apt install python3.10 python3.10-pip python3.10-venv
+   
+   # Verifikasi versi Python
+   python3.10 --version
+   
+   # Install dependencies
+   python3.10 -m pip install -r requirements.txt
    ```
 
 3. **Jalankan aplikasi**:
    ```bash
-   streamlit run app.py
+   python3.10 -m streamlit run app.py
    ```
 
 4. **Akses aplikasi**:
