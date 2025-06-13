@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://i.imgur.com/auG5p6C.png" alt="Laskar AI Logo" width="200"/>
+  <img src="https://i.imgur.com/DBN1oaP.png" alt="Laskar AI Logo" width="200"/>
   <h1><b>Project Capstone LaskarAI</b></h1>
   <p><i>Sebuah inisiatif untuk masa depan AI Indonesia yang lebih cerah!</i></p>
 </div>
@@ -19,7 +19,18 @@ Program ini memberikan pelatihan intensif di bidang _Machine Learning_ & _Data S
 
 # 🐟 ReFisher: Deteksi Kesegaran Ikan dengan AI
 
+![Logo ReFisher](https://i.imgur.com/yjRTZKs.png)
 Selamat datang di **ReFisher**! ✨ Proyek ini memanfaatkan kekuatan _Deep Learning_ untuk mengklasifikasi kesegaran ikan berdasarkan citra. Model yang kami kembangkan dapat membedakan antara ikan segar dan tidak segar, sebuah langkah awal yang menjanjikan untuk otomatisasi kontrol kualitas di industri perikanan.
+
+## 📋 Dokumentasi
+
+Berikut adalah dokumentasi lengkap proyek ReFisher:
+
+* **📑 Project Plan**: [Rencana Proyek](https://docs.google.com/document/d/1example-project-plan)
+* **📄 Project Brief**: [Brief Proyek](https://docs.google.com/document/d/1example-project-brief)
+* **🎬 Video Demo**: [Demo Aplikasi](https://youtu.be/example-demo-video)
+* **🎤 Video Presentasi**: [Presentasi Tim](https://youtu.be/example-presentation-video)
+* **📊 Slide PPT**: [Presentasi Lengkap](https://docs.google.com/presentation/d/1example-presentation-slides)
 
 ## 👥 Anggota Tim
 
@@ -45,7 +56,61 @@ Proyek ini adalah hasil kolaborasi dari talenta-talenta berbakat dari berbagai u
 Kami telah mengembangkan aplikasi web interaktif menggunakan **Streamlit** untuk mendemonstrasikan kemampuan model kami secara langsung.
 
 * **Akses Aplikasi**: [**refisher.streamlit.app**](https://refisher.streamlit.app/)
-* **Branch Pengembangan**: Lihat kode aplikasi di branch [**development**](https://github.com/raflyherdianto/refisher/tree/development).
+* **Screenshot Aplikasi**: ![ReFisher App](https://i.imgur.com/bgLPojr.png)
+* **Branch Pengembangan**: Lihat kode aplikasi di branch [**development**](https://github.com/raflyherdianto/refisher/tree/development) atau folder `streamlit`.
+
+**Folder `streamlit` di branch ini merupakan versi final aplikasi** yang siap untuk deployment production.
+
+### 🔧 Menjalankan Aplikasi Secara Lokal
+
+#### ⚠️ Catatan Penting
+Aplikasi ini **tidak mendukung Windows** secara native karena `tflite_runtime` tidak support Windows. Gunakan WSL untuk Windows atau jalankan di Linux.
+
+#### 🐧 Untuk Pengguna Windows (menggunakan WSL)
+
+1. **Install WSL (Windows Subsystem for Linux)**:
+   ```bash
+   wsl --install -d Ubuntu
+   ```
+
+2. **Clone repository di dalam WSL**:
+   ```bash
+   git clone https://github.com/raflyherdianto/refisher.git
+   cd refisher/streamlit
+   ```
+
+3. **Install Python dan dependencies**:
+   ```bash
+   sudo apt update
+   sudo apt install python3 python3-pip
+   pip3 install -r requirements.txt
+   ```
+
+4. **Jalankan aplikasi**:
+   ```bash
+   streamlit run app.py
+   ```
+
+#### 🐧 Untuk Pengguna Linux
+
+1. **Clone repository**:
+   ```bash
+   git clone https://github.com/raflyherdianto/refisher.git
+   cd refisher/streamlit
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Jalankan aplikasi**:
+   ```bash
+   streamlit run app.py
+   ```
+
+4. **Akses aplikasi**:
+   - Buka browser dan kunjungi: `http://localhost:8501`
 
 ## 🛠️ Struktur Branch & Model
 
@@ -68,6 +133,8 @@ Dataset yang digunakan dibagi menjadi tiga bagian untuk memastikan proses pelati
 
 Semua gambar di-preprocess dengan normalisasi (skala 1./255) sebelum dimasukkan ke dalam model.
 
+[**`Dataset yang Digunakan dari Roboflow`**](https://universe.roboflow.com/meva-wfywb/fish-fresh-and-non-fresh)
+
 ## 📈 Pelatihan & Evaluasi (Contoh dari Branch `Nuri`)
 
 Setiap model dilatih secara terpisah. Sebagai contoh, berikut adalah hasil dari model CNN kustom:
@@ -88,10 +155,12 @@ _Sumber: Hasil evaluasi dari file nurind.ipynb di branch Nuri._
 
 ## 📦 Aset Model
 
-Folder `model_development` di setiap *branch* berisi aset yang relevan, termasuk:
+**Folder `model_development` di branch ini merupakan versi final** yang berisi aset model terbaik yang telah dipilih untuk production. Namun, Anda dapat menjelajahi setiap *branch* untuk melihat implementasi model yang berbeda dan proses pengembangan yang detail.
+
+Setiap folder `model_development` berisi aset yang relevan, termasuk:
 
 1.  **Notebook `.ipynb`**: Berisi seluruh proses dari pemuatan data hingga pelatihan.
 2.  **`model.tflite`**: Model dalam format TensorFlow Lite.
 3.  **`tfjs_model/`**: Model dalam format TensorFlow.js.
 
-Anda dapat meng-clone repositori ini dan menjelajahi setiap *branch* untuk melihat implementasi model yang berbeda.
+Anda dapat meng-clone repositori ini dan menjelajahi setiap *branch* untuk melihat implementasi model yang berbeda dan membandingkan performanya.
